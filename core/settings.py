@@ -140,3 +140,8 @@ SIMPLE_JWT = {
 }
 
 CORS_ORIGIN_ALLOW_ALL = True
+
+AUTHENTICATION_BACKENDS = [
+    'core.emailauth.EmailAuthBackend',
+    'django.contrib.auth.backends.ModelBackend',
+]

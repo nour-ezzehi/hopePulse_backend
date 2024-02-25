@@ -131,23 +131,27 @@ def city_detail(request, pk):
 
 @api_view(['POST'])
 def login_view(request):
-    if request.data.get('username'):
-        username = request.data.get('username')
-    else :
-        username = request.data.get('email')
+    email = request.data.get('email')
     password = request.data.get('password')
 
-    # Check if the provided username_or_email is either a username or an email
-    user = authenticate(request, username=username, password=password)
+    print(email)
+    print(password)
+
+
+    user = authenticate(request, username=email, password=password)
 
     if user is not None:
         login(request, user)
         refresh = RefreshToken.for_user(user)
-        response = Response({'message': 'Login successful', 'username': user.username, 'token': str(refresh.access_token)})
-        response['Authorization'] = f'Bearer {str(refresh.access_token)}'
-        return response
-    return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-
+        return Response({
+            'success': 'Login successful',
+            'token': str(refresh.access_token),
+            'refresh_token': str(refresh),
+            'username': user.username
+        })
+    else:
+        return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
+    
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -172,12 +176,12 @@ def signup_view(request):
         return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
     if User.objects.filter(email=email).exists():
-        return Response({'error': 'Email already exists'}, status=status.HTTP_400_BAD_REQUEST)
+        return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
     user = User.objects.create_user(username=username, password=password, email=email)
     user.save()
 
-    return Response({'message': 'User created successfully'}, status=status.HTTP_201_CREATED)
+    return Response({'message': 'User created successfully', "username": user.username, "email": email}, status=status.HTTP_201_CREATED)
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
