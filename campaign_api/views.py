@@ -131,15 +131,12 @@ def city_detail(request, pk):
 
 @api_view(['POST'])
 def login_view(request):
-    email = request.data.get('email')
+    username = request.data.get('username')
     password = request.data.get('password')
 
-    print(email)
-    print(password)
+    user = authenticate(request, username=username, password=password)
 
-
-    user = authenticate(request, username=email, password=password)
-
+    print(user.email)
     if user is not None:
         login(request, user)
         refresh = RefreshToken.for_user(user)
