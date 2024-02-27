@@ -1,5 +1,5 @@
 from django.urls import path
-from .views import campaign_list, campaign_detail, category_list, category_detail, city_list, city_detail, CampaignDetail, CampaignList, login_view, signup_view, logout_view, check_auth
+from .views import campaign_list, campaign_detail, category_list, category_detail, city_list, city_detail, CampaignDetail, CampaignList, login_view, signup_view, logout_view, check_auth, user_campaigns
 
 app_name = 'campaign'
 
@@ -16,4 +16,5 @@ urlpatterns = [
     path('logout/', logout_view, name='logout'),
     path('signup/', signup_view, name='signup'),
     path('check-auth/', check_auth),
+    path('user-campaigns/', user_campaigns)
 ]

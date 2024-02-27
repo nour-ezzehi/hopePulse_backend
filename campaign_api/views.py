@@ -21,6 +21,7 @@ class CampaignDetail(generics.RetrieveDestroyAPIView):
     serializer_class = CampaignSerializer
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def campaign_list(request):
     if request.method == 'GET':
         campaigns = Campaign.objects.all()
@@ -28,6 +29,9 @@ def campaign_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
+        # Set the owner field to the current authenticated user (request.user)
+        request.data['owner'] = request.user.id
+
         print("Request data:", request.data)  # Print the request data
         serializer = CampaignSerializer(data=request.data)
         if serializer.is_valid():
@@ -195,3 +199,10 @@ def check_auth(request):
         'email': user.email,
     }
     return Response({'authenticated': True, 'user': user_data})
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_campaigns(request):
+    user_campaigns = Campaign.objects.filter(owner=request.user)
+    serializer = CampaignSerializer(user_campaigns, many=True)
+    return Response(serializer.data)

@@ -22,7 +22,7 @@ class City(models.Model):
 class Campaign(models.Model):
     name = models.CharField(max_length=100)
     owner = models.ForeignKey(User, on_delete=models.CASCADE)
-    start_date = models.DateTimeField(auto_now_add=True) 
+    start_date = models.DateTimeField(auto_now_add=True)
     phone_number_validator = RegexValidator(regex=r'^\d{8}$', message='Phone number must be exactly 8 digits.')
     telephone_number = models.PositiveIntegerField(validators=[phone_number_validator])
     beneficiary = models.CharField(max_length=100)
