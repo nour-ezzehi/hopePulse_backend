@@ -28,10 +28,13 @@ def campaign_list(request):
         return Response(serializer.data)
 
     elif request.method == 'POST':
+        print("Request data:", request.data)  # Print the request data
         serializer = CampaignSerializer(data=request.data)
         if serializer.is_valid():
+            print("Serializer is valid.")  # Print a message if the serializer is valid
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        print("Serializer is not valid. Errors:", serializer.errors)  # Print the errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
@@ -55,7 +58,7 @@ def campaign_detail(request, pk):
     elif request.method == 'DELETE':
         campaign.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 
 @api_view(['GET', 'POST'])
 def category_list(request):
@@ -92,7 +95,7 @@ def category_detail(request, pk):
     elif request.method == 'DELETE':
         category.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
-    
+
 @api_view(['GET', 'POST'])
 def city_list(request):
     if request.method == 'GET':
