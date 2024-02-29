@@ -26,20 +26,27 @@ class CampaignDetail(generics.RetrieveDestroyAPIView):
 def campaign_list(request):
     if request.method == 'GET':
         campaigns = Campaign.objects.all()
-        serializer = CampaignSerializer(campaigns, many=True)
-        return Response(serializer.data)
+
+        paginator = PageNumberPagination()
+        paginator.page_size = 2 # Number of items per page
+        result_page = paginator.paginate_queryset(campaigns, request)
+        serializer = CampaignSerializer(result_page, many=True)
+
+        total_pages = paginator.page.paginator.num_pages
+        return Response({
+            'results': serializer.data,
+            'total_pages': total_pages
+        })
+
 
     elif request.method == 'POST':
         # Set the owner field to the current authenticated user (request.user)
         request.data['owner'] = request.user.id
 
-        print("Request data:", request.data)  # Print the request data
         serializer = CampaignSerializer(data=request.data)
         if serializer.is_valid():
-            print("Serializer is valid.")  # Print a message if the serializer is valid
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
-        print("Serializer is not valid. Errors:", serializer.errors)  # Print the errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @permission_classes([IsAuthenticated])
