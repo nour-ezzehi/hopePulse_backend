@@ -10,6 +10,7 @@ from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
+from rest_framework.pagination import PageNumberPagination
 
 
 class CampaignList(generics.ListCreateAPIView):
@@ -41,6 +42,7 @@ def campaign_list(request):
         print("Serializer is not valid. Errors:", serializer.errors)  # Print the errors if the serializer is not valid
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
+@permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
 def campaign_detail(request, pk):
     try:
@@ -204,5 +206,18 @@ def check_auth(request):
 @permission_classes([IsAuthenticated])
 def user_campaigns(request):
     user_campaigns = Campaign.objects.filter(owner=request.user)
-    serializer = CampaignSerializer(user_campaigns, many=True)
-    return Response(serializer.data)
+
+    # Apply pagination
+    paginator = PageNumberPagination()
+    paginator.page_size = 2  # Specify the number of items per page
+
+    result_page = paginator.paginate_queryset(user_campaigns, request)
+    serializer = CampaignSerializer(result_page, many=True)
+
+    # Get total number of pages
+    total_pages = paginator.page.paginator.num_pages
+
+    return Response({
+        'results': serializer.data,
+        'total_pages': total_pages
+    })
