@@ -11,6 +11,7 @@ from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.pagination import PageNumberPagination
+from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
 
 class CampaignList(generics.ListCreateAPIView):
@@ -21,24 +22,37 @@ class CampaignDetail(generics.RetrieveDestroyAPIView):
     queryset = Campaign.objects.all()
     serializer_class = CampaignSerializer
 
+from django.shortcuts import get_object_or_404
+
 @api_view(['GET', 'POST'])
 @permission_classes([IsAuthenticated])
 def campaign_list(request):
     if request.method == 'GET':
-        campaigns = Campaign.objects.all()
+        category_name = request.GET.get('category')
+        print(category_name)  # Get the category name parameter from the request
 
-        paginator = PageNumberPagination()
-        paginator.page_size = 2 # Number of items per page
-        result_page = paginator.paginate_queryset(campaigns, request)
+        if category_name:
+            category = get_object_or_404(Category, name=category_name)
+            campaigns = Campaign.objects.filter(category=category.id)
+        else:
+            campaigns = Campaign.objects.all()
+
+        paginator = Paginator(campaigns, 2)  # Number of items per page
+        page_number = request.GET.get('page')
+        try:
+            result_page = paginator.page(page_number)
+        except PageNotAnInteger:
+            result_page = paginator.page(1)
+        except EmptyPage:
+            result_page = paginator.page(paginator.num_pages)
+
         serializer = CampaignSerializer(result_page, many=True)
 
-        total_pages = paginator.page.paginator.num_pages
         return Response({
             'results': serializer.data,
-            'total_pages': total_pages
+            'total_pages': paginator.num_pages
         })
-
-
+    
     elif request.method == 'POST':
         # Set the owner field to the current authenticated user (request.user)
         request.data['owner'] = request.user.id
@@ -48,7 +62,6 @@ def campaign_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-
 @permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
 def campaign_detail(request, pk):
