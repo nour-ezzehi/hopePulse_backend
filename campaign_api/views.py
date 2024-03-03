@@ -9,7 +9,7 @@ from .serializers import CampaignSerializer
 from django.contrib.auth.models import User
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
 
@@ -25,7 +25,7 @@ class CampaignDetail(generics.RetrieveDestroyAPIView):
 from django.shortcuts import get_object_or_404
 
 @api_view(['GET', 'POST'])
-@permission_classes([IsAuthenticated])
+@permission_classes([IsAuthenticatedOrReadOnly])
 def campaign_list(request):
     if request.method == 'GET':
         category_name = request.GET.get('category')
@@ -52,7 +52,7 @@ def campaign_list(request):
             'results': serializer.data,
             'total_pages': paginator.num_pages
         })
-    
+
     elif request.method == 'POST':
         # Set the owner field to the current authenticated user (request.user)
         request.data['owner'] = request.user.id
