@@ -7,6 +7,7 @@ from rest_framework import generics
 from campaign.models import Campaign
 from .serializers import CampaignSerializer
 from django.contrib.auth.models import User
+from accounts.models import CustomUser
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
@@ -62,6 +63,7 @@ def campaign_list(request):
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
 def campaign_detail(request, pk):
@@ -75,9 +77,9 @@ def campaign_detail(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = CampaignSerializer(campaign, data=request.data)
+        serializer = CampaignSerializer(campaign, data=request.data, partial=True)  # Set partial=True to allow partial updates
         if serializer.is_valid():
-            serializer.save()
+            serializer.save()  # Update the campaign with the new data
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -177,7 +179,7 @@ def login_view(request):
         })
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -198,13 +200,13 @@ def signup_view(request):
     password = request.data.get('password')
     email = request.data.get('email')
 
-    if User.objects.filter(username=username).exists():
+    if CustomUser.objects.filter(username=username).exists():
         return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(email=email).exists():
+    if CustomUser.objects.filter(email=email).exists():
         return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = User.objects.create_user(username=username, password=password, email=email)
+    user = CustomUser.objects.create_user(username=username, password=password, email=email)
     user.save()
 
     return Response({'message': 'User created successfully', "username": user.username, "email": email}, status=status.HTTP_201_CREATED)
@@ -222,14 +224,16 @@ def check_auth(request):
     }
     return Response({'authenticated': True, 'user': user_data})
 
+
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
 def user_campaigns(request):
     user_campaigns = Campaign.objects.filter(owner=request.user)
 
-    # Apply pagination
+    # Default number of items per page
+    page_size = request.GET.get('page_size', 2)  # Default to 2 if not specified
     paginator = PageNumberPagination()
-    paginator.page_size = 2  # Specify the number of items per page
+    paginator.page_size = page_size
 
     result_page = paginator.paginate_queryset(user_campaigns, request)
     serializer = CampaignSerializer(result_page, many=True)
