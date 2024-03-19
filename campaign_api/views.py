@@ -5,13 +5,13 @@ from campaign.models import Campaign, Category, City
 from .serializers import CampaignSerializer, CategorySerializer, CitySerializer
 from rest_framework import generics
 from campaign.models import Campaign
-from .serializers import CampaignSerializer
-from django.contrib.auth.models import User
+from accounts.models import CustomUser
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from accounts.serializers import CustomUserSerializer
 
 
 class CampaignList(generics.ListCreateAPIView):
@@ -58,10 +58,15 @@ def campaign_list(request):
         request.data['owner'] = request.user.id
 
         serializer = CampaignSerializer(data=request.data)
+        print(serializer)
         if serializer.is_valid():
+            print("true")
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if not serializer.is_valid():
+          print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 @permission_classes([IsAuthenticated])
 @api_view(['GET', 'PUT', 'DELETE'])
 def campaign_detail(request, pk):
@@ -75,9 +80,9 @@ def campaign_detail(request, pk):
         return Response(serializer.data)
 
     elif request.method == 'PUT':
-        serializer = CampaignSerializer(campaign, data=request.data)
+        serializer = CampaignSerializer(campaign, data=request.data, partial=True)  # Set partial=True to allow partial updates
         if serializer.is_valid():
-            serializer.save()
+            serializer.save()  # Update the campaign with the new data
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
@@ -160,12 +165,12 @@ def city_detail(request, pk):
 
 @api_view(['POST'])
 def login_view(request):
-    username = request.data.get('username')
+    email = request.data.get('email')
     password = request.data.get('password')
 
-    user = authenticate(request, username=username, password=password)
+    user = authenticate(request, username=email, password=password)
 
-    print(user.email)
+    print(user.username)
     if user is not None:
         login(request, user)
         refresh = RefreshToken.for_user(user)
@@ -173,11 +178,11 @@ def login_view(request):
             'success': 'Login successful',
             'token': str(refresh.access_token),
             'refresh_token': str(refresh),
-            'username': user.username
+            'username': user.username,
         })
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
-    
+
 @api_view(['POST'])
 @permission_classes([IsAuthenticated])
 def logout_view(request):
@@ -198,13 +203,13 @@ def signup_view(request):
     password = request.data.get('password')
     email = request.data.get('email')
 
-    if User.objects.filter(username=username).exists():
+    if CustomUser.objects.filter(username=username).exists():
         return Response({'error': 'Username already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    if User.objects.filter(email=email).exists():
+    if CustomUser.objects.filter(email=email).exists():
         return Response({'error': 'email already exists'}, status=status.HTTP_400_BAD_REQUEST)
 
-    user = User.objects.create_user(username=username, password=password, email=email)
+    user = CustomUser.objects.create_user(username=username, password=password, email=email)
     user.save()
 
     return Response({'message': 'User created successfully', "username": user.username, "email": email}, status=status.HTTP_201_CREATED)
@@ -217,8 +222,10 @@ def check_auth(request):
     """
     user = request.user
     user_data = {
-        'username': user.username,
         'email': user.email,
+        'password': user.password,
+        'username': user.username,
+        'id': user.id
     }
     return Response({'authenticated': True, 'user': user_data})
 
@@ -227,9 +234,10 @@ def check_auth(request):
 def user_campaigns(request):
     user_campaigns = Campaign.objects.filter(owner=request.user)
 
-    # Apply pagination
+    # Default number of items per page
+    page_size = request.GET.get('page_size', 2)  # Default to 2 if not specified
     paginator = PageNumberPagination()
-    paginator.page_size = 2  # Specify the number of items per page
+    paginator.page_size = page_size
 
     result_page = paginator.paginate_queryset(user_campaigns, request)
     serializer = CampaignSerializer(result_page, many=True)
@@ -241,3 +249,11 @@ def user_campaigns(request):
         'results': serializer.data,
         'total_pages': total_pages
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_informations(request):
+    "returns user data"
+    user = request.user
+    serializer = CustomUserSerializer(user)
+    return Response(serializer.data)
