@@ -5,14 +5,13 @@ from campaign.models import Campaign, Category, City
 from .serializers import CampaignSerializer, CategorySerializer, CitySerializer
 from rest_framework import generics
 from campaign.models import Campaign
-from .serializers import CampaignSerializer
-from django.contrib.auth.models import User
 from accounts.models import CustomUser
 from django.contrib.auth import authenticate, login
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework.permissions import IsAuthenticated, IsAuthenticatedOrReadOnly
 from rest_framework.pagination import PageNumberPagination
 from django.core.paginator import Paginator, EmptyPage, PageNotAnInteger
+from accounts.serializers import CustomUserSerializer
 
 
 class CampaignList(generics.ListCreateAPIView):
@@ -59,9 +58,13 @@ def campaign_list(request):
         request.data['owner'] = request.user.id
 
         serializer = CampaignSerializer(data=request.data)
+        print(serializer)
         if serializer.is_valid():
+            print("true")
             serializer.save()
             return Response(serializer.data, status=status.HTTP_201_CREATED)
+        if not serializer.is_valid():
+          print(serializer.errors)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @permission_classes([IsAuthenticated])
@@ -162,12 +165,12 @@ def city_detail(request, pk):
 
 @api_view(['POST'])
 def login_view(request):
-    username = request.data.get('username')
+    email = request.data.get('email')
     password = request.data.get('password')
 
-    user = authenticate(request, username=username, password=password)
+    user = authenticate(request, username=email, password=password)
 
-    print(user.email)
+    print(user.username)
     if user is not None:
         login(request, user)
         refresh = RefreshToken.for_user(user)
@@ -175,7 +178,7 @@ def login_view(request):
             'success': 'Login successful',
             'token': str(refresh.access_token),
             'refresh_token': str(refresh),
-            'username': user.username
+            'username': user.username,
         })
     else:
         return Response({'error': 'Invalid credentials'}, status=status.HTTP_401_UNAUTHORIZED)
@@ -219,11 +222,12 @@ def check_auth(request):
     """
     user = request.user
     user_data = {
-        'username': user.username,
         'email': user.email,
+        'password': user.password,
+        'username': user.username,
+        'id': user.id
     }
     return Response({'authenticated': True, 'user': user_data})
-
 
 @api_view(['GET'])
 @permission_classes([IsAuthenticated])
@@ -245,3 +249,11 @@ def user_campaigns(request):
         'results': serializer.data,
         'total_pages': total_pages
     })
+
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def user_informations(request):
+    "returns user data"
+    user = request.user
+    serializer = CustomUserSerializer(user)
+    return Response(serializer.data)
