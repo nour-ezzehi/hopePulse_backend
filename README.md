@@ -1,5 +1,5 @@
 # hopepulse
-"Our website serves as a platform for campaign creators to initiate and manage fundraising campaigns aimed at addressing various causes and needs. These campaigns are showcased to potential donors who seek opportunities to contribute and make a positive impact. By connecting creators with donors, our platform facilitates meaningful collaborations and supports the realization of impactful initiatives."
+"Our website serves as a platform for campaign creators to initiate and manage fundraising campaigns aimed at addressing various causes and needs. These campaigns are showcased to potential donors who seek opportunities to contribute and make a positive impact. By connecting creators with donors."
 
 ## Features 🎞️
 
