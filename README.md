@@ -49,7 +49,6 @@ Now, your frontend development environment should be set up and ready for develo
 2. **Create and Activate Virtual Environment**: Navigate to the project directory and create a virtual environment. Activate the virtual environment to isolate dependencies:
 
     ```bash
-    cd hopePulse_backend
     python -m venv venv
     source venv/bin/activate  # On macOS/Linux
     ```
