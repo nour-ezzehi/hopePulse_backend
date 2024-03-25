@@ -1,10 +1,12 @@
-from rest_framework.decorators import api_view
+from rest_framework.decorators import api_view, permission_classes
 from rest_framework.response import Response
 from rest_framework import status
 from .models import CustomUser
 from .serializers import CustomUserSerializer
+from rest_framework.permissions import IsAuthenticated
 
 @api_view(['GET', 'POST'])
+@permission_classes([IsAuthenticated])
 def custom_user_list(request):
     """
     List all users or create a new user.
@@ -22,6 +24,7 @@ def custom_user_list(request):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 @api_view(['GET', 'PUT', 'DELETE'])
+@permission_classes([IsAuthenticated])
 def custom_user_detail(request, pk):
     """
     Retrieve, update or delete a user instance.
@@ -38,8 +41,11 @@ def custom_user_detail(request, pk):
 
     elif request.method == 'PUT':
         serializer = CustomUserSerializer(user, data=request.data)
+        print(request.data)
         if serializer.is_valid():
             serializer.save()
+            user.profile_complete = True
+            user.save()
             return Response(serializer.data)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
