@@ -22,14 +22,13 @@ class Campaign(models.Model):
     name = models.CharField(max_length=100)
     owner = models.ForeignKey(CustomUser, on_delete=models.CASCADE)
     start_date = models.DateTimeField(auto_now_add=True)
-    phone_number_validator = RegexValidator(regex=r'^\d{8}$', message='Phone number must be exactly 8 digits.')
-    telephone_number = models.PositiveIntegerField(validators=[phone_number_validator])
     beneficiary = models.CharField(max_length=100)
-    budget = models.DecimalField(max_digits=10, decimal_places=2)
+    goal = models.DecimalField(max_digits=10, decimal_places=2)
     category = models.ForeignKey(Category, on_delete=models.CASCADE)
     city = models.ForeignKey(City, on_delete=models.SET_NULL, null=True)
     story = models.TextField()
     num_of_donation = models.PositiveBigIntegerField(default=0)
+    num_of_donators = models.PositiveBigIntegerField(default = 0)
     current_amount_raised = models.DecimalField(max_digits=10, decimal_places=2, default=0.00)
 
     def __str__(self):
