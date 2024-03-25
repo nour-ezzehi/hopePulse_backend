@@ -2,6 +2,7 @@ from django.contrib.auth.models import AbstractBaseUser, PermissionsMixin
 from django.db import models
 from django.utils import timezone
 from django.utils.translation import gettext_lazy as _
+from django.core.validators import RegexValidator
 
 from .managers import CustomUserManager
 
@@ -20,8 +21,13 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
     username = models.CharField(max_length=28, default="")
     biography = models.TextField(blank=True, null=True)
     role = models.CharField(choices=ROLE_CHOICES, default='donor', blank=True, null=True)
-    first_name = models.CharField(default="",  blank=True, null=True)
-    last_name = models.CharField(default="",  blank=True, null=True)
+    first_name = models.CharField(blank=True, null=True)
+    last_name = models.CharField(blank=True, null=True)
+    profile_complete = models.BooleanField(default=False)
+    phone_number_validator = RegexValidator(regex=r'^\d{8}$', message='Phone number must be exactly 8 digits.')
+    telephone_number = models.CharField(validators=[phone_number_validator], blank=True, null=True)
+    cin_validator = RegexValidator(regex=r'^\d{8}$', message='cin number must be exactly 8 digits')
+    cin = models.CharField(validators=[cin_validator], max_length=8, blank=True, null=True)
 
     USERNAME_FIELD = "email"
     REQUIRED_FIELDS = ['username']
@@ -54,4 +60,4 @@ class CustomUser(AbstractBaseUser, PermissionsMixin):
         """
         Check if the user's profile is complete.
         """
-        return all([self.biography, self.role, self.first_name, self.last_name])
+        return all([self.biography, self.first_name, self.last_name, self.cin, self.telephone_number])
